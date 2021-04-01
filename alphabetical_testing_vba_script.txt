@@ -1,0 +1,123 @@
+
+Sub AnalyzeWorkbook()
+
+Dim WS_I As Worksheet
+Application.ScreenUpdating = False
+For Each WS_I In Worksheets
+    WS_I.Select
+    Call StockMktAnalysis
+Next
+Application.ScreenUpdating = True
+
+End Sub
+
+Sub StockMktAnalysis()
+
+Dim RowIndex As Double
+Dim LastRow As Double
+Dim SumRowIndex As Double
+Dim TotalStockVol As Double
+Dim LargestSV As Double
+
+Dim OpenPrice As Double
+Dim ClosePrice As Double
+Dim YearlyChange As Double
+Dim YearlyChangePct As Double
+Dim LargestIncrease As Double
+Dim LargestDecrease As Double
+
+Dim Ticker As String
+Dim NextTicker As String
+Dim Ticker1 As String
+Dim Ticker2 As String
+Dim Ticker3 As String
+
+LastRow = Cells(Rows.Count, 1).End(xlUp).Row
+
+Cells(1, 9).Value = "Ticker"
+Cells(1, 10).Value = "Yearly Change"
+Cells(1, 11).Value = "Percent Change"
+Cells(1, 12).Value = "Total Stock Volume"
+Range("I1:L1").Font.Bold = True
+
+Cells(1, 16).Value = "Ticker"
+Cells(1, 17).Value = "Value"
+Cells(2, 15).Value = "Greatest % Increase"
+Cells(3, 15).Value = "Greatest % Decrease"
+Cells(4, 15).Value = "Greatest Total Volume"
+Range("O2:O4").Font.Bold = True
+Range("P1:Q1").Font.Bold = True
+
+SumRowIndex = 2
+
+OpenPrice = Cells(2, 3).Value  ' Get opening price prior to looping through rows
+ClosePrice = 0  ' Initialization
+TotalStockVol = 0
+
+LargestIncrease = 0  ' Initiatilization
+LargestDecrease = 0
+LargestSV = 0
+Ticker1 = " "
+Ticker2 = " "
+Ticker3 = " "
+
+For RowIndex = 2 To LastRow
+    
+    TotalStockVol = TotalStockVol + Cells(RowIndex, 7).Value
+    
+    Ticker = Cells(RowIndex, 1).Value
+    NextTicker = Cells((RowIndex + 1), 1).Value
+    
+    If Ticker <> NextTicker Then  ' Check for change in Stock ticker symbol
+        
+        ClosePrice = Cells(RowIndex, 6).Value
+        YearlyChange = ClosePrice - OpenPrice
+        
+        Cells(SumRowIndex, 9).Value = Cells(RowIndex, 1).Value  ' Start populating summarization by stock ticker change
+        If YearlyChange < 0 Then
+            Cells(SumRowIndex, 10).Interior.ColorIndex = 3  ' Set to Red
+            ElseIf YearlyChange > 0 Then
+                Cells(SumRowIndex, 10).Interior.ColorIndex = 4  ' Set to Green
+        End If
+        Cells(SumRowIndex, 10).Value = YearlyChange
+        If OpenPrice <> 0 Then  ' Dont divide by zero
+            YearlyChgPct = (ClosePrice - OpenPrice) / OpenPrice
+        Else
+            YearlyChgPct = 0
+        End If
+        Cells(SumRowIndex, 11).Value = Format(YearlyChgPct, "Percent")  ' Handles multiplying by 100 and setting precent symbol
+        Cells(SumRowIndex, 12).Value = TotalStockVol
+        
+        SumRowIndex = SumRowIndex + 1
+        OpenPrice = Cells(RowIndex + 1, 3)
+        
+        If YearlyChgPct > LargestIncrease Then ' Identify largest increase per the sheet
+            LargestIncrease = YearlyChgPct
+            Ticker1 = Cells(RowIndex, 1).Value
+        End If
+        
+        If YearlyChgPct < LargestDecrease Then  ' Identify largest drop per the sheet
+            LargestDecrease = YearlyChgPct
+            Ticker2 = Cells(RowIndex, 1).Value
+        End If
+        
+        If TotalStockVol > LargestSV Then ' Identify largest stock volume
+            LargestSV = TotalStockVol
+            Ticker3 = Cells(RowIndex, 1).Value
+        End If
+        
+        ClosePrice = 0
+        TotalStockVol = 0
+          
+    End If
+    
+Next RowIndex
+ 
+    Cells(2, 16).Value = Ticker1  ' All rows processed at this point - populate largest increase decrease and stock volume
+    Cells(3, 16).Value = Ticker2
+    Cells(4, 16).Value = Ticker3
+    Cells(2, 17).Value = Format(LargestIncrease, "Percent")
+    Cells(3, 17).Value = Format(LargestDecrease, "Percent")
+    Cells(4, 17).Value = LargestSV
+
+End Sub
